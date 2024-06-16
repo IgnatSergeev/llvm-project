@@ -233,9 +233,9 @@ private:
 
 std::unique_ptr<SourceLocationArgument>
 SourceLocationArgument::fromString(StringRef Value) {
-  std::optional<ParsedSourceLocation> Location = ParsedSourceLocation::FromString(Value);
-  if (Location)
-    return std::make_unique<SourceLocLocationArgument>(std::move(*Location));
+  ParsedSourceLocation Location = ParsedSourceLocation::FromString(Value);
+  if (Location.FileName != "")
+    return std::make_unique<SourceLocLocationArgument>(std::move(Location));
   llvm::errs() << "error: '-location' option must be specified using "
                   "<file>:<line>:<column>\n";
   return nullptr;
