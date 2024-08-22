@@ -78,7 +78,8 @@ public:
   evaluate(RefactoringRuleContext &Context) const;
 };
 
-/// A base class for any requirement that expects source code position (or the refactoring tool with the -location option).
+/// A base class for any requirement that expects source code position (or the
+/// refactoring tool with the -location option).
 class SourceLocationRequirement : public RefactoringActionRuleRequirement {
 public:
   Expected<SourceLocation> evaluate(RefactoringRuleContext &Context) const {
@@ -86,6 +87,16 @@ public:
       return Context.getLocation();
     return Context.createDiagnosticError(diag::err_refactor_no_location);
   }
+};
+
+/// An AST statement requirement is satisfied when location is surrounded by
+/// statement.
+///
+/// The requirement will be evaluated only once during the initiation and
+/// search of matching refactoring action rules.
+class ASTStatementRequirement : public SourceLocationRequirement {
+public:
+  Expected<const Stmt *> evaluate(RefactoringRuleContext &Context) const;
 };
 
 /// A base class for any requirement that requires some refactoring options.

@@ -196,7 +196,7 @@ public:
   /// \returns true if an error occurred, false otherwise.
   virtual bool
   forAllLocations(const SourceManager &SM,
-               llvm::function_ref<void(SourceLocation L)> Callback) = 0;
+                  llvm::function_ref<void(SourceLocation L)> Callback) = 0;
 };
 
 /// Stores the parsed -location=filename:line:column option.
@@ -205,8 +205,9 @@ public:
   SourceLocLocationArgument(ParsedSourceLocation Location)
       : Location(std::move(Location)) {}
 
-  bool forAllLocations(const SourceManager &SM,
-                    llvm::function_ref<void(SourceLocation L)> Callback) override {
+  bool forAllLocations(
+      const SourceManager &SM,
+      llvm::function_ref<void(SourceLocation L)> Callback) override {
     auto FE = SM.getFileManager().getFile(Location.FileName);
     FileID FID = FE ? SM.translateFile(*FE) : FileID();
     if (!FE || FID.isInvalid()) {
@@ -219,7 +220,7 @@ public:
         SM.translateLineCol(FID, Location.Line, Location.Column));
     if (Loc.isInvalid()) {
       llvm::errs() << "error: -location=" << Location.FileName << ':'
-                   << Location.Line << ':' << Location.Column 
+                   << Location.Line << ':' << Location.Column
                    << " : invalid source location\n";
       return true;
     }
@@ -354,9 +355,8 @@ public:
       if (Rule->hasLocationRequirement()) {
         Location = std::make_unique<cl::opt<std::string>>(
             "location",
-            cl::desc(
-                "Location where refactoring should "
-                "be initiated( <file>:<line>:<column>)"),
+            cl::desc("Location where refactoring should "
+                     "be initiated( <file>:<line>:<column>)"),
             cl::cat(Category), cl::sub(*this));
         break;
       }
@@ -534,8 +534,7 @@ public:
       return;
     }
     if (HasLocation) {
-      assert(SelectedSubcommand->getLocation() &&
-             "Missing location argument?");
+      assert(SelectedSubcommand->getLocation() && "Missing location argument?");
       if (opts::Verbose)
         SelectedSubcommand->getLocation()->print(llvm::outs());
       if (SelectedSubcommand->getLocation()->forAllLocations(
