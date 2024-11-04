@@ -200,6 +200,31 @@ public:
                   llvm::function_ref<void(SourceLocation L)> Callback) = 0;
 };
 
+/// Stores the parsed -location=test:<filename> option.
+class TestSourceLocationArgument final : public AbstractSourceLocationArgument {
+public:
+  TestSourceLocationArgument(TestLocationsInFile TestLocations)
+      : TestLocations(std::move(TestLocations)) {}
+
+  void print(raw_ostream &OS) override { TestLocations.dump(OS); }
+
+  std::unique_ptr<ClangRefactorToolConsumerInterface>
+  createCustomConsumer() override {
+    return TestLocations.createConsumer();
+  }
+
+  /// Testing support: invokes the location action for each source location in
+  /// the test file.
+  bool forAllLocations(
+      const SourceManager &SM,
+      llvm::function_ref<void(SourceLocation L)> Callback) override {
+    return TestLocations.foreachLocation(SM, Callback);
+  }
+
+private:
+  TestLocationsInFile TestLocations;
+};
+
 /// Stores the parsed -location=filename:line:column option.
 class SourceLocationArgument final : public AbstractSourceLocationArgument {
 public:
@@ -235,6 +260,15 @@ private:
 
 std::unique_ptr<AbstractSourceLocationArgument>
 AbstractSourceLocationArgument::fromString(StringRef Value) {
+  if (Value.starts_with("test:")) {
+    StringRef Filename = Value.drop_front(strlen("test:"));
+    std::optional<TestLocationsInFile> ParsedTestLocations =
+        findTestLocations(Filename);
+    if (!ParsedTestLocations)
+      return nullptr; // A parsing error was already reported.
+    return std::make_unique<TestSourceLocationArgument>(
+        std::move(*ParsedTestLocations));
+  }
   ParsedSourceLocation Location = ParsedSourceLocation::FromString(Value);
   if (Location.FileName != "")
     return std::make_unique<SourceLocationArgument>(std::move(Location));
@@ -509,8 +543,11 @@ public:
     std::unique_ptr<ClangRefactorToolConsumerInterface> TestConsumer;
     bool HasSelection = MatchingRule->hasSelectionRequirement();
     bool HasLocation = MatchingRule->hasLocationRequirement();
-    if (HasSelection)
+    if (HasSelection) {
       TestConsumer = SelectedSubcommand->getSelection()->createCustomConsumer();
+    } else if (HasLocation) {
+      TestConsumer = SelectedSubcommand->getLocation()->createCustomConsumer();
+    }
     ClangRefactorToolConsumerInterface *ActiveConsumer =
         TestConsumer ? TestConsumer.get() : Consumer.get();
     ActiveConsumer->beginTU(AST);
