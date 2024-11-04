@@ -98,6 +98,61 @@ struct TestSelectionRangesInFile {
 std::optional<TestSelectionRangesInFile>
 findTestSelectionRanges(StringRef Filename);
 
+/// A set of test source locations specified in one file.
+///
+/// Test source location specified in a test file using an inline
+/// command in the comment. These commands can take the following forms:
+///
+/// - /*loc =*/ will create a source location in the default group
+///   right after the comment.
+/// - /*loc a=*/ will create a source location in the 'a' group right
+///   after the comment.
+/// - /*loc = +1*/ will create a source location at a location that's
+///   right after the comment with one offset to the column.
+///
+/// Clang-refactor will expect all locations in one test group to produce
+/// identical results.
+struct TestLocationsInFile {
+  std::string Filename;
+  struct LocationGroup {
+    std::string Name;
+    SmallVector<unsigned, 8> Locations;
+  };
+  std::vector<LocationGroup> GroupedLocations;
+
+  bool foreachLocation(const SourceManager &SM,
+                       llvm::function_ref<void(SourceLocation)> Callback) const;
+
+  std::unique_ptr<ClangRefactorToolConsumerInterface> createConsumer() const;
+
+  void dump(llvm::raw_ostream &OS) const;
+};
+
+/// Extracts the grouped source locations from the file that's specified in
+/// the -location=test:<filename> option.
+///
+/// The grouped locations are specified in comments using the following syntax:
+/// "loc" " " [ group-name ] "=" [ "+" column-offset ]
+///
+/// The source location is then computed from this command by taking the ending
+/// location of the comment, and adding 'column-offset' to the column
+/// for that location.
+///
+/// All source locations in one group are expected to produce the same
+/// refactoring result.
+///
+/// When testing, zero is returned from clang-refactor even when a group
+/// produces an initiation error, which is different from normal invocation
+/// that returns a non-zero value. This is done on purpose, to ensure that group
+/// consistency checks can return non-zero, but still print the output of
+/// the group. So even if a test matches the output of group, it will still fail
+/// because clang-refactor should return zero on exit when the group results are
+/// consistent.
+///
+/// \returns std::nullopt on failure (errors are emitted to stderr), or a set of
+/// grouped source locations in the given file otherwise.
+std::optional<TestLocationsInFile> findTestLocations(StringRef Filename);
+
 } // end namespace refactor
 } // end namespace clang
 

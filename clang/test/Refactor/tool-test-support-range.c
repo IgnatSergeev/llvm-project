@@ -24,23 +24,23 @@
 // The following invocations are in the default group:
 
 // CHECK: invoking action 'local-rename':
-// CHECK-NEXT: -selection={{.*}}tool-test-support.c:3:11
+// CHECK-NEXT: -selection={{.*}}tool-test-support-range.c:3:11
 
 // CHECK: invoking action 'local-rename':
-// CHECK-NEXT: -selection={{.*}}tool-test-support.c:7:15
+// CHECK-NEXT: -selection={{.*}}tool-test-support-range.c:7:15
 
 // CHECK: invoking action 'local-rename':
-// CHECK-NEXT: -selection={{.*}}tool-test-support.c:9:29
+// CHECK-NEXT: -selection={{.*}}tool-test-support-range.c:9:29
 
 // CHECK: invoking action 'local-rename':
-// CHECK-NEXT: -selection={{.*}}tool-test-support.c:13:19 -> {{.*}}tool-test-support.c:13:22
+// CHECK-NEXT: -selection={{.*}}tool-test-support-range.c:13:19 -> {{.*}}tool-test-support-range.c:13:22
 
 // The following invocations are in the 'named' group, and they follow
 // the default invocation even if some of their ranges occur prior to the
 // ranges from the default group because the groups are tested one-by-one:
 
 // CHECK: invoking action 'local-rename':
-// CHECK-NEXT: -selection={{.*}}tool-test-support.c:5:17
+// CHECK-NEXT: -selection={{.*}}tool-test-support-range.c:5:17
 
 // CHECK: invoking action 'local-rename':
-// CHECK-NEXT: -selection={{.*}}tool-test-support.c:11:20
+// CHECK-NEXT: -selection={{.*}}tool-test-support-range.c:11:20
